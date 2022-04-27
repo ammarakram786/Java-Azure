@@ -80,20 +80,31 @@ public class BlobController {
 
 
     @RequestMapping(method = RequestMethod.GET,value = "/download")
-    public ResponseEntity download(@RequestParam(name = "fileName")String fileName, HttpServletResponse response) throws IOException {
-        BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
-        headers.add("Pragma", "no-cache");
-        headers.add("Expires", "0");
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=myDoc.docx");
-        ByteArrayOutputStream outputStream1=new ByteArrayOutputStream();
-        blobClient.download(outputStream1);
-        return ResponseEntity.ok()
-                .headers(headers)
-                .contentLength(outputStream1.size())
-                .contentType(MediaType.parseMediaType("application/octet-stream"))
-                .body(new ByteArrayResource(outputStream1.toByteArray()));
+    public ResponseEntity download(@RequestParam(name = "fileName")String fileName, HttpServletResponse response) {
+        JSONObject jsonObject = new JSONObject();
+        String responseMsg;
+        try {
+            BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+            headers.add("Pragma", "no-cache");
+            headers.add("Expires", "0");
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=myDoc.docx");
+            ByteArrayOutputStream outputStream1=new ByteArrayOutputStream();
+            blobClient.download(outputStream1);
+            responseMsg = "Successfully download";
+            jsonObject.put(JsonKey.SUCCESS,true);
+            jsonObject.put(JsonKey.DATA,outputStream1.toString());
+            jsonObject.put(JsonKey.MESSAGE,responseMsg);
+
+        }catch (Exception e){
+            responseMsg = e.getMessage();
+            jsonObject.put(JsonKey.SUCCESS,false);
+            jsonObject.put(JsonKey.ERROR_CODE, ApiErrorCode.UNKNOWN);
+            jsonObject.put(JsonKey.MESSAGE,responseMsg);
+        }
+
+        return new ResponseEntity<>(jsonObject.toString(), HttpStatus.OK);
     }
 }
 
